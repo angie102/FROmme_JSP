@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Studio">
+	<!--
+		파라미터로 받은 값에 접근할 때 #{}, ${}로 사용한다.
+		1. #{}
+			받아온 파라미터의 타입에 상관없이 String타입으로 변경된다.
+			사용자가 직접 입력한 값에 사용하는 것이 좋다(보안에 유리하다)
+		2. ${}
+			받아온 파라미터의 타입을 그대로 유지한다.
+			사용자가 직접 입력한 값을 전달받을 때에는 사용하지 않는 것이 좋다(쿼리 주입 보안에 취약하다)
+			테이블이나 컬럼명을 파라미터로 받을 때에 사용한다(#{}은 자동으로 따옴표가 붙기 때문)
+	-->
+	
+	<select id="getStudioName" parameterType="_int" resultType="string">
+		SELECT STUDIO_NAME FROM STUDIO WHERE STUDIO_NO = ${studio_no}
+	</select>
+	<!-- 검색된 공방 이름, 공방 주소 -->
+	<select id="getFindGongBangList" parameterType="map" resultType="StudioVO">
+		SELECT * FROM 
+			(SELECT ROWNUM R, S.* FROM 
+				(SELECT * FROM STUDIO WHERE STUDIO_NAME LIKE '%' ||  #{word} || '%' OR STUDIO_ADDRESS LIKE '%' ||  #{word} || '%' 
+			) S ) F
+		WHERE F.R BETWEEN ${startRow} AND ${endRow}
+	</select>
+	<!-- 검색된 공방 목록 개수 -->
+	<select id="getGongbangListCountBySearchWord" parameterType="string" resultType="_int">
+		SELECT COUNT(*) FROM STUDIO WHERE STUDIO_NAME LIKE '%' ||  #{word} || '%' OR STUDIO_ADDRESS LIKE '%' ||  #{word} || '%' 
+	</select>
+	<!-- 해당공방번호에 있는 해당 클래스 콘텐츠 가져오기-->
+	<select id="getClassContents" parameterType="_int" resultType="ClassesVO">
+		SELECT c.* ,i.CLASSES_LIMIT ,i.CLASSES_APPLY_NUM, im.IMAGE_PATH 
+FROM CLASSES c
+	LEFT OUTER JOIN CLASSES_INFO i ON c.CLASSES_NO =i.CLASSES_NO 
+	LEFT OUTER JOIN CLASSES_IMAGE im ON c.CLASSES_NO = im.CLASSES_NO 
+WHERE c.STUDIO_NO = ${studio_no}
+	</select>
+	
+	<!-- 공방주가 개설한 클래스 DB에 등록하기(클래스이름, 강사명, 클래스가격, 정원, 모집시작일, 모집마감일,수업날짜, 클래스내용, 대표이미지) -->
+	<insert id="createNewClass" parameterType="ClassesVO">
+		INSERT INTO CLASSES (CLASSES_NO, CLASSES_NAME, CLASSES_TEACHER, CLASSES_PRICE, CLASSES_START, CLASSES_END, CLASSES_CONTENT, STUDIO_NO, GENRE_NO, CLASSES_STATE) 
+		VALUES(CLASSES_SEQ.NEXTVAL,#{classes_name},#{classes_teacher},#{classes_price},#{classes_start}, #{classes_end}, #{classes_content}, #{studio_no},#{genre_no},#{classes_state})
+	</insert>
+	
+	<!-- 클래스내용 수정 -->
+	<update id="updateClassDetail" parameterType="ClassesVO">
+		UPDATE CLASSES SET
+		CLASSES_NAME = #{classes_name},
+		CLASSES_TEACHER = #{classes_teacher},
+		CLASSES_CONTENT = #{classes_content},
+		CLASSES_PRICE = #{classes_price},
+		CLASSES_START = #{classes_start},
+		CLASSES_END = #{classes_end},
+		CLASSES_REGISTERDATE = #{classes_day}
+		WHERE CLASSES_NO = #{classes_no}
+	</update>
+	<!-- 클래스 정원 업데이트 -->
+	<update id="updatelimit" parameterType="ClassesVO">
+		UPDATE CLASSES_INFO SET
+		CLASSES_LIMIT = #{classes_limit}
+		WHERE CLASSES_NO = #{classes_no}
+	</update>
+	<!-- 클래스 파일경로 업데이트 -->
+	<update id="updateFilePath" parameterType="ClassesVO">
+		UPDATE CLASSES_IMAGE SET
+		IMAGE_PATH = #{image_path}
+		WHERE CLASSES_NO = #{classes_no}
+	</update>
+	
+	<!-- 해당 공방이 갖고 있는 클래스 개수 가져오기 -->
+	<select id="getClassCount" parameterType="_int" resultType="_int">
+		SELECT COUNT(*) FROM CLASSES WHERE STUDIO_NO = #{studio_no}
+	</select>
+	
+	<!-- 해당 공방정보 가져오기-->
+	<select id="getStudioDetail" parameterType="_int" resultType="StudioVO">
+		SELECT * FROM STUDIO WHERE STUDIO_NO = ${studio_no}
+	</select>
+	
+	<!-- 시퀀스 아이디로 공방 번호 가져오기-->
+	<select id="getStudioNum" parameterType="string" resultType="_int">
+		SELECT STUDIO_NO FROM USERS WHERE USERS_ID = #{session_id}
+	</select>
+	<!-- 장르번호로 장르 가져오기-->
+	<select id="getGenreName" parameterType="_int" resultType="string">
+		SELECT GENRE_NAME FROM GENRE WHERE GENRE_NO = #{genre_no}
+	</select>
+	<!-- 해당 클래스 번호로 헤당 클래스 데이터 가져오기-->
+	<select id="getClassData" parameterType="_int" resultType="ClassesVO">
+		SELECT * FROM CLASSES WHERE CLASSES_NO = #{classes_no}
+	</select>
+	<!-- 해당 클래스 번호로 헤당 클래스 데이터 삭제하기-->
+	<delete id="deleteClass" parameterType="_int">
+		DELETE FROM CLASSES WHERE CLASSES_NO = #{classes_no}
+	</delete>
+	<!-- 해당클래스 번호로 해당 클래스 인포 데이터 삭제하기 -->
+	<delete id="deleteClassInfo" parameterType="_int">
+		DELETE FROM CLASSES_INFO WHERE CLASSES_NO = #{classes_no}
+	</delete>
+	<!-- 해당클래스 번호로 해당 클래스 이미지  데이터삭제하기 -->
+	<delete id="deleteClassImage" parameterType="_int">
+		DELETE FROM CLASSES_IMAGE WHERE CLASSES_NO = #{classes_no}
+	</delete>	
+	
+	<!-- 해당 클래스 정원 가져오기-->
+	<select id="getClassLimit" parameterType="_int" resultType="_int">
+		SELECT CLASSES_LIMIT FROM CLASSES_INFO WHERE CLASSES_NO = #{classes_no}
+	</select>
+	<!-- 해당 클래스 현재원 가져오기-->
+	<select id="getClassApplyNum" parameterType="_int" resultType="_int">
+		SELECT CLASSES_APPLY_NUM FROM CLASSES_INFO WHERE CLASSES_NO = #{classes_no}
+	</select>
+	<!-- 클래스 인포 생성-->
+	<insert id="createClassInfo" parameterType="ClassesInfoVO">
+		INSERT INTO CLASSES_INFO (CLASSES_NO, CLASSES_INFO_NO, CLASSES_DATE, CLASSES_LIMIT) VALUES (#{classes_no},CLASSES_INFO_SEQ.NEXTVAL, #{classes_date}, #{classes_limit})
+	</insert>
+	<!-- 클래스 이미지 생성 -->
+	<insert id="createClassImage" parameterType="map">
+		INSERT INTO CLASSES_IMAGE (CLASSES_NO, IMAGE_PATH) VALUES (#{classes_no}, #{image_path}) 
+	</insert>
+	
+	<!--  유저 테이블에 공방번호 삽입-->
+	<update id="insertStudioNum" parameterType="map">
+		 UPDATE USERS SET 
+		 STUDIO_NO = #{studio_no}
+		 WHERE USERS_ID = #{session_id}
+	</update>
+	<!-- 방금생성된 클래스 넘버 가져오기-->
+	<select id="getClassNo" parameterType="string" resultType="_int">
+		SELECT CLASSES_NO FROM CLASSES WHERE CLASSES_NAME = #{classes_name}
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+

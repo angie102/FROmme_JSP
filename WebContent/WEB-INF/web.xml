@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd" id="WebApp_ID" version="3.1">
+  <display-name>Fromme</display-name>
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+    <welcome-file>index.htm</welcome-file>
+    <welcome-file>index.jsp</welcome-file>
+    <welcome-file>default.html</welcome-file>
+    <welcome-file>default.htm</welcome-file>
+    <welcome-file>default.jsp</welcome-file>
+  </welcome-file-list>
+  <servlet>
+    <servlet-name>UserFrontController</servlet-name>
+    <servlet-class>com.fromme.app.user.UserFrontController</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>BoardFrontController</servlet-name>
+    <servlet-class>com.fromme.app.board.BoardFrontController</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>AdminFrontController</servlet-name>
+    <servlet-class>com.fromme.app.admin.AdminFrontController</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>MapFrontController</servlet-name>
+    <servlet-class>com.fromme.app.map.MapFrontController</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>ClassesFrontController</servlet-name>
+    <servlet-class>com.fromme.app.classes.ClassesFrontController</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>StudioFrontController</servlet-name>
+    <servlet-class>com.fromme.app.studio.StudioFrontController</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>MessageFrontController</servlet-name>
+    <servlet-class>com.fromme.app.user.MessageFrontController</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>UserFrontController</servlet-name>
+    <url-pattern>*.use</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>BoardFrontController</servlet-name>
+    <url-pattern>*.bo</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>MapFrontController</servlet-name>
+    <url-pattern>*.map</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>AdminFrontController</servlet-name>
+    <url-pattern>*.adm</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>ClassesFrontController</servlet-name>
+    <url-pattern>*.cls</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>StudioFrontController</servlet-name>
+    <url-pattern>*.std</url-pattern>
+  </servlet-mapping>
+   <servlet-mapping>
+    <servlet-name>MessageFrontController</servlet-name>
+    <url-pattern>*.msg</url-pattern>
+  </servlet-mapping>
+  
+  
+  <filter>
+  	<filter-name>URICheckFilter</filter-name>
+  	<filter-class>com.fromme.app.filter.URICheckFilter</filter-class>
+  </filter>
+  
+  <filter-mapping>
+  	<filter-name>URICheckFilter</filter-name>
+  	<url-pattern>*.bo</url-pattern>
+  </filter-mapping>
+  
+  <filter-mapping>
+  	<filter-name>URICheckFilter</filter-name>
+  	<url-pattern>*.map</url-pattern>
+  </filter-mapping>
+  
+  <filter>
+    <filter-name>CharacterEncodingFilter</filter-name>
+    <filter-class>com.fromme.app.filter.CharacterEncodingFilter</filter-class>            
+     <init-param>
+          <param-name>encoding</param-name>
+          <param-value>utf-8</param-value>
+     </init-param>
+   </filter>
+     
+     <filter-mapping>
+           <filter-name>CharacterEncodingFilter</filter-name>
+           <url-pattern>/*</url-pattern>
+     </filter-mapping>
+</web-app>

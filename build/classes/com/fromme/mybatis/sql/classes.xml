@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Classes">
+
+	<!-- 좋아요 숫자 변동 -->
+	<update id="increaseLike" parameterType="map">
+		UPDATE CLASSES SET CLASSES_LIKE = ${classes_like}
+		WHERE CLASSES_NO = ${classes_no}
+	</update>
+	<!-- 해당 아이디 좋아요 눌렀는지 체크 -->
+	<select id="checkLike" parameterType="LikeitVO"  resultType="_int">
+		SELECT COUNT(*) FROM LIKEIT 
+		WHERE USERS_ID = '${users_id}' AND CLASSES_NO = ${classes_no}
+	</select>
+	<!-- 좋아요 업데이트 -->
+	<update id="updateLike" parameterType="LikeitVO" >
+		UPDATE LIKEIT SET LIKE_CNT = 
+			CASE WHEN LIKE_CNT = 1 THEN 0 ELSE 1 END
+				WHERE USERS_ID = '${users_id}' AND CLASSES_NO = ${classes_no}
+	</update>
+	<!-- 좋아요 새로 등록 -->
+	<insert id="insertLike" parameterType="LikeitVO">
+		INSERT INTO LIKEIT 
+			VALUES(likeit_SEQ.NEXTVAL, '${users_id}', 
+				${classes_no}, 1 )
+	</insert>
+	<!-- 좋아요 실행 결과 가져오기 -->
+	<select id="resultLike" parameterType="LikeitVO"  resultType="_int">
+		SELECT LIKE_CNT FROM LIKEIT 
+		WHERE USERS_ID = '${users_id}' AND CLASSES_NO = ${classes_no}
+	</select>
+		<!-- 좋아요 실행 결과 가져오기 -->
+	<select id="getLike" parameterType="string"  resultType="_int">
+		SELECT CLASSES_NO FROM LIKEIT 
+		WHERE USERS_ID = '${users_id}' AND LIKE_CNT = 1
+	</select>
+
+	
+	
+	<!-- 전체 클래스 리스트 -->
+	<select id="listAll" parameterType="map" resultType="ClassesListVO">
+		SELECT r, c.CLASSES_NO, c.studio_no, c.CLASSES_NAME, s.STUDIO_NAME, 
+		g.GENRE_NAME, c.CLASSES_PRICE, c.CLASSES_START, c.CLASSES_STATE, c.CLASSES_LIKE
+			FROM (SELECT ROWNUM r, sort.* FROM
+				(SELECT * FROM CLASSES	ORDER BY CLASSES_NO DESC) sort) c 
+						join STUDIO s ON c.STUDIO_NO = s.STUDIO_NO 
+							JOIN GENRE g ON c.GENRE_NO = g.GENRE_NO 
+								WHERE r BETWEEN ${startRow} AND ${endRow}
+									ORDER BY r ASC
+	</select>
+	<!-- 전체 클래스 개수 -->	
+	<select id="listCount" parameterType="_int" resultType="_int">
+		SELECT COUNT(*) FROM CLASSES
+	</select>
+	<!-- 현재 클래스 번호 가져오기 -->	
+	<select id="getCurrentSeq" resultType="_int">
+		SELECT CLASSES_SEQ.CURRVAL FROM DUAL
+	</select>
+	
+	
+	
+	<!-- 정렬 쿼리 -->
+	<!-- 장르 이름으로 번호 가져오기 -->	
+	<select id="getGenre" resultType="_int"   parameterType="string">
+		SELECT GENRE_NO FROM GENRE WHERE GENRE_NAME = #{genre_name} 
+	</select>
+	<!-- 장르 리스트 가져오기 -->		
+	<select id="getGenreList" resultType="string">
+		SELECT GENRE_NAME FROM GENRE
+	</select>
+	<!-- 장르별 클래스 리스트 -->	
+	<select id="listGenre" parameterType="map" resultType="ClassesVO">
+		SELECT * FROM
+			(SELECT ROWNUM R, D.* FROM
+				(SELECT * FROM CLASSES WHERE GENRE_NO = ${genre_no} ORDER BY GENRE_NO DESC) D) G
+					WHERE G.R BETWEEN ${startRow} AND ${endRow}
+	</select>
+	
+	<select id="listCountWithGenre" parameterType="_int" resultType="_int">
+		SELECT COUNT(*) FROM CLASSES WHERE GENRE_NO = ${genre_no}
+	</select>
+	
+
+	<!-- 장르별 클래스 개수 -->	
+	<select id="getTotalSortGenre" resultType="_int"   parameterType="_int">
+		SELECT COUNT(*) FROM CLASSES WHERE GENRE_NO = #{genre_no} 
+	</select>
+	
+	<!-- 정렬 : 장르 -->
+	<select id="sortByGenre" resultType="ClassesListVO"  parameterType="map">
+			SELECT r, c.CLASSES_NO, c.studio_no, c.CLASSES_NAME, s.STUDIO_NAME, 
+		g.GENRE_NAME, c.CLASSES_PRICE, c.CLASSES_START, c.CLASSES_STATE, c.CLASSES_LIKE
+			FROM (SELECT ROWNUM r, sort.* FROM
+				(SELECT * FROM CLASSES	WHERE GENRE_NO = ${genre_no} 
+					ORDER BY CLASSES_NO DESC) sort) c 
+						join STUDIO s ON c.STUDIO_NO = s.STUDIO_NO 
+							JOIN GENRE g ON c.GENRE_NO = g.GENRE_NO 
+								WHERE r BETWEEN ${startRow} AND ${endRow}
+									ORDER BY r desc
+	</select>
+
+	<!-- 정렬 : 사용후기 높은가격 낮은가격 상품명 신상품-->
+	<select id="sortList" resultType="ClassesListVO"  parameterType="map">
+	SELECT r, c.CLASSES_NO, c.studio_no, 
+		c.CLASSES_NAME, s.STUDIO_NAME, 
+		g.GENRE_NAME, c.CLASSES_PRICE,
+		c.CLASSES_START, c.CLASSES_STATE, 
+		c.CLASSES_LIKE FROM 
+			(SELECT ROWNUM r, sort.*
+				FROM (SELECT * FROM CLASSES ORDER BY ${sort_standard} ${ascOrDesc}) sort) c
+					join STUDIO s ON c.STUDIO_NO = s.STUDIO_NO 
+						JOIN GENRE g ON c.GENRE_NO = g.GENRE_NO 
+							WHERE r BETWEEN ${startRow} AND ${endRow}
+								ORDER BY r ASC
+	</select>
+	
+	<!-- 정렬 : 장르 + 사용후기 높은가격 낮은가격 상품명 신상품-->
+	<select id="sortListAfterGenreSort" resultType="ClassesListVO"  parameterType="map">
+	SELECT r, c.CLASSES_NO, c.studio_no, 
+		c.CLASSES_NAME, s.STUDIO_NAME, 
+		g.GENRE_NAME, c.CLASSES_PRICE,
+		c.CLASSES_START, c.CLASSES_STATE, 
+		c.CLASSES_LIKE FROM 
+			(SELECT ROWNUM r, sort.* 
+				FROM (SELECT * FROM CLASSES  WHERE GENRE_NO = ${genre_no} 
+				ORDER BY ${sort_standard} ${ascOrDesc}) sort) c 
+					join STUDIO s ON c.STUDIO_NO = s.STUDIO_NO 
+						JOIN GENRE g ON c.GENRE_NO = g.GENRE_NO 
+							WHERE r BETWEEN ${startRow} AND ${endRow}
+								ORDER BY r ASC
+	</select>
+	
+	<!-- 좋아요 순 정렬-->
+	<select id="sortAllbyLike" resultType="ClassesListVO"  parameterType="map">
+		SELECT r, c.CLASSES_NO, c.studio_no, c.CLASSES_NAME, 
+		s.STUDIO_NAME, g.GENRE_NAME, c.CLASSES_PRICE, 
+		c.CLASSES_START, c.CLASSES_STATE, c.CLASSES_LIKE
+			FROM (SELECT ROWNUM r, sort.* FROM
+				(SELECT * FROM CLASSES ORDER BY CLASSES_LIKE DESC) sort) c 
+						join STUDIO s ON c.STUDIO_NO = s.STUDIO_NO 
+							JOIN GENRE g ON c.GENRE_NO = g.GENRE_NO 
+								WHERE r BETWEEN ${startRow} AND ${endRow}
+									ORDER BY r ASC
+	</select>
+	
+	
+	<!-- 검색 정렬 -->
+	<select id="searchByKeyword" resultType="ClassesListVO"  parameterType="map">
+		SELECT r, c.CLASSES_NO, c.studio_no, c.CLASSES_NAME, 
+			s.STUDIO_NAME, g.GENRE_NAME, c.CLASSES_PRICE, 
+			c.CLASSES_START, c.CLASSES_STATE, c.CLASSES_LIKE
+				FROM (SELECT ROWNUM r, sort.* FROM
+					(SELECT * FROM CLASSES WHERE CLASSES_NAME LIKE '%' || #{word} || '%' ) sort) c 
+							join STUDIO s ON c.STUDIO_NO = s.STUDIO_NO 
+								JOIN GENRE g ON c.GENRE_NO = g.GENRE_NO 
+									WHERE r BETWEEN ${startRow} AND ${endRow}
+										ORDER BY r ASC
+	</select>
+
+	<!-- 검색 정렬에서 하위정렬 -->
+	<select id="sortAfterSearchByKeyword" resultType="ClassesListVO"  parameterType="map">
+		SELECT r, c.CLASSES_NO, c.studio_no, c.CLASSES_NAME, 
+			s.STUDIO_NAME, g.GENRE_NAME, c.CLASSES_PRICE, 
+			c.CLASSES_START, c.CLASSES_STATE, c.CLASSES_LIKE
+				FROM (SELECT ROWNUM r, sort.* FROM
+					(SELECT * FROM CLASSES WHERE CLASSES_NAME LIKE '%' || '${word}' || '%' 
+						ORDER BY ${sort_standard} ${ascOrDesc}) sort) c 
+							join STUDIO s ON c.STUDIO_NO = s.STUDIO_NO 
+								JOIN GENRE g ON c.GENRE_NO = g.GENRE_NO 
+									WHERE r BETWEEN ${startRow} AND ${endRow}
+										ORDER BY r ASC
+	</select>
+	<!-- 검색 정렬 결과 개수 -->
+	<select id="CountSearchByKeyword" resultType="_int"  parameterType="string">
+		SELECT COUNT(*) FROM CLASSES 
+			WHERE CLASSES_NAME LIKE '%' || '${word}' || '%'
+	</select>
+
+	
+
+	<select id="getGenreName" parameterType="_int" resultType="string">
+		SELECT GENRE_NAME FROM GENRE WHERE GENRE_NO = ${genre_no}
+	</select>
+	
+	
+	
+	<!-- 선택한 클래스 상세정보 가져오기 -->
+	<select id="getDetail" parameterType="_int" resultType="ClassesVO">
+		SELECT * FROM CLASSES WHERE CLASSES_NO = ${classes_no}
+	</select>
+	<!-- 장바구니에 저장할 클래스 상세정보2 가져오기 -->
+	<select id="getClassesInfo" parameterType="_int" resultType="ClassesInfoVO">
+		SELECT * FROM CLASSES_INFO WHERE CLASSES_NO = ${classes_no}
+	</select>
+	<!-- 결제정보에 저장할 클래스 상세정보2 가져오기 -->
+	<select id="getClassesInfoByClassesInfoNo" parameterType="_int" resultType="ClassesInfoVO">
+		SELECT * FROM CLASSES_INFO WHERE CLASSES_INFO_NO = ${classes_info_no}
+	</select>	
+	<!-- 사용자가 선택한 날짜의 신청가능 인원수 가져오기  -->
+	<select id="getClassesAvailableNumBySelectedDate" parameterType="ClassesInfoVO" resultType="ClassesInfoVO">
+		SELECT CLASSES_APPLY_NUM, CLASSES_LIMIT FROM  CLASSES_INFO 
+		WHERE CLASSES_NO = ${classes_no} AND CLASSES_DATE = #{classes_date}
+	</select>	
+
+	
+
+
+	<!-- 장바구니의 클래스 상세정보2 가져오기 -->
+	<select id="getClassesInfoByDateAndNo" parameterType="ClassesInfoVO" resultType="ClassesInfoVO">
+		SELECT * FROM CLASSES_INFO 
+			WHERE CLASSES_NO = ${classes_no} AND CLASSES_DATE ='${classes_date}'
+	</select>
+	<!-- 클래스 상태 변경 조건 체크를 위해 상세정보2 상태 가져오기 -->
+	<select id="getIndividualState" parameterType="map" resultType="_int">
+		SELECT COUNT(*) FROM CLASSES_INFO 
+			WHERE CLASSES_NO = ${classes_no} AND CLASSES_INDIVIDUAL_STATE = ${classes_individual_state}
+	</select>
+	<!-- 클래스 상태변경 -->
+	<update id="updateClassesStatus" parameterType="ClassesVO">
+		UPDATE CLASSES SET 
+		CLASSES_STATE = ${classes_state}
+		WHERE CLASSES_NO = ${classes_no} 
+	</update>
+	<!-- 클래스 수강인원 추가 -->
+	<update id="updateClassesApplyNumAndState" parameterType="ClassesInfoVO">
+		UPDATE CLASSES_INFO SET 
+		CLASSES_APPLY_NUM = ${classes_apply_num}, CLASSES_INDIVIDUAL_STATE = ${classes_individual_state}
+		WHERE CLASSES_INFO_NO = ${classes_info_no}
+	</update>
+		<!--비회원 주문 저장을 위한 공방번호 가져오기 -->	
+	<select id="getStudioNo" resultType="_int">
+		SELECT STUDIO_NO FROM CLASSES WHERE CLASSES_NO =${classes_no}
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+

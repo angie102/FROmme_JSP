@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Cart">
+	<!-- 장바구니에 아이템 추가 -->
+	<insert id="insertItem" parameterType="CartVO">
+		INSERT INTO CART 
+			VALUES(cart_SEQ.NEXTVAL, SYSDATE, #{cart_quantity}, 
+				#{choice_date}, ${classes_info_no}, ${classes_no}, #{users_id})
+	</insert>
+	
+	<!-- 장바구니에 같은 옵션의 아이템이 존재하는지 확인 -->
+	<select id="countCart" parameterType="CartVO" resultType="_int">
+		SELECT COUNT(*) FROM CART WHERE CLASSES_NO = ${classes_no} AND USERS_ID =#{users_id} AND CLASSES_INFO_NO = #{classes_info_no}	
+	</select>
+	
+	<!-- 같은 아이템이 존재하는 경우 장바구니에 수량 추가 -->
+	<update id="updateQuantity" parameterType="CartVO">
+			UPDATE CART SET 
+				CART_QUANTITY = (SELECT CART_QUANTITY FROM CART 
+					WHERE CLASSES_NO = ${classes_no} 
+					AND USERS_ID = #{users_id} 
+					AND CLASSES_INFO_NO = #{classes_info_no}
+					)+1 
+						WHERE CLASSES_NO = ${classes_no} AND USERS_ID =#{users_id} AND CLASSES_INFO_NO = #{classes_info_no}		
+	</update>
+	
+	<!-- 장바구니 리스트 출력 -->
+	<select id="listCart" parameterType="string" resultType="CartListVO">
+	SELECT
+         ct.USERS_ID AS users_id, 
+ 		c.CLASSES_NAME AS classes_name,
+         c.CLASSES_NO AS classes_no,
+         ct.CHOICE_DATE AS choice_date,
+         ct.CART_NO AS cart_no,
+         ct.CLASSES_INFO_NO AS classes_info_no,
+         ct.CART_QUANTITY AS cart_quantity,
+         c.CLASSES_PRICE AS classes_price,
+        (c.CLASSES_PRICE * ct.CART_QUANTITY) as cart_sum_price
+        FROM
+            CLASSES c, CART ct 
+        WHERE c.CLASSES_NO = ct.CLASSES_NO 
+            AND ct.users_id = #{users_id}
+        ORDER BY
+            c.CLASSES_NAME DESC
+	</select>
+
+	<!-- 장바구니 아이템 삭제 -->
+	<delete id="deleteItem" parameterType="_int" >
+		DELETE FROM CART WHERE CART_NO =${cart_no}
+	</delete>
+		<!-- 장바구니 아이템 수량 변경 -->
+	<update id="chageQuantity" parameterType="map">
+		UPDATE CART SET 
+				CART_QUANTITY = ${cart_quantity} 
+						WHERE cart_no = ${cart_no}
+	</update>
+	
+	
+	<!-- 장바구니 정보 가져오기 -->	
+	<select id="getCart" parameterType="string" resultType="OrderlistVO">
+		SELECT
+	         ct.CLASSES_NO AS classes_no,
+	 		 ct.USERS_ID AS users_id,
+	 		 c.STUDIO_NO AS studio_no,
+	         ct.CLASSES_INFO_NO as CLASSES_INFO_NO,
+	         ct.CHOICE_DATE as choice_date, 
+	         ct.CART_QUANTITY as quantity  
+	        FROM
+	            CLASSES c join CART ct ON c.CLASSES_NO = ct.CLASSES_NO
+	             and  ct.USERS_ID = #{users_id}
+	</select>
+	
+	<!-- 결제상태 가져오기 -->	
+	<select id="getOrderStateNo" parameterType="_int" resultType="string">
+		SELECT ORDERLIST_STATE FROM ORDERSTATUS WHERE ORDERLIST_STATE_NO =${order_state_no}
+	</select>
+	<!-- 주문자 상세정보 저장 -->	
+	<insert id="insertOrderInfo" parameterType="OrdererInfoVO">
+		INSERT INTO ORDERER_INFO VALUES
+			(ORDERER_INFO_SEQ.NEXTVAL,
+			'${orderer_name}', ${orderer_phone}, '${orderer_email}', ${total_price})
+	</insert>
+	<!-- 마지막으로 저장한 주문자 상세정보 번호 가져오기 -->
+	<select id="getLastOrderInfoNo" resultType="_int">
+		SELECT ORDERER_INFO_SEQ.CURRVAL FROM DUAL
+	</select>
+	<!-- 주문내역 저장 -->	
+	<insert id="insertOrderlist" parameterType="OrderlistVO">
+		INSERT INTO ORDERLIST VALUES
+			(${classes_no}, '${users_id}', SYSDATE,
+			SYSDATE+7, ${orderlist_state_no}, orderlist_SEQ.NEXTVAL,
+			${studio_no}, '${choice_date}', '${classes_info_no}', 
+			${reservation_no}, ${quantity}, ${orderer_info_no})
+	</insert>
+	<!-- 장바구니 비우기 -->	
+	<delete id="deleteCartAll" parameterType="OrderlistVO" >
+		DELETE FROM CART
+			WHERE CLASSES_NO = ${classes_no} AND USERS_ID =#{users_id} AND CHOICE_DATE = #{choice_date}
+	</delete>
+
+	
+</mapper>

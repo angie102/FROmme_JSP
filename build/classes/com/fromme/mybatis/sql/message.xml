@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Message">
+	<!--
+		파라미터로 받은 값에 접근할 때 #{}, ${}로 사용한다.
+		1. #{}
+			받아온 파라미터의 타입에 상관없이 String타입으로 변경된다.
+			사용자가 직접 입력한 값에 사용하는 것이 좋다(보안에 유리하다)
+		2. ${}
+			받아온 파라미터의 타입을 그대로 유지한다.
+			사용자가 직접 입력한 값을 전달받을 때에는 사용하지 않는 것이 좋다(쿼리 주입 보안에 취약하다)
+			테이블이나 컬럼명을 파라미터로 받을 때에 사용한다(#{}은 자동으로 따옴표가 붙기 때문)
+	-->
+	<!--	
+		1. board.xml에 전체 게시글 개수를 가져오는 쿼리문 작성
+		SELECT COUNT(*) FROM BOARD;
+		BOARD 테이블에서 전체 행을 가져온 후 전체 행의 총 개수를 구해준다.
+	-->
+	<select id="listAll" parameterType="map" resultType="MessageVO">
+		SELECT * FROM
+			(SELECT ROWNUM R, D.* FROM 
+				(SELECT * FROM MESSAGE M ORDER BY MESSAGE_NO DESC) D) B 
+					WHERE B.R BETWEEN ${startRow} AND ${endRow} AND RECEIVE_ID = #{session_id}
+	</select>
+	
+	<!-- 메세지 갯수를 가져오는 쿼리문 -->
+	<select id="messageCnt" parameterType="string" resultType="_int">
+		SELECT COUNT(*) FROM MESSAGE WHERE RECEIVE_ID = #{session_id}
+	</select>
+	
+	<!-- 메세지 시퀀스를 가져오는 쿼리문 -->
+	<select id="getSeq" resultType="_int">
+		SELECT MESSAGE_SEQ.CURRVAL FROM DUAL
+	</select>
+	
+	<!-- 메세지 테이블의 정보를 가져오는 쿼리문 -->
+	<select id="getDetail" parameterType="_int" resultType="MessageVO">
+		SELECT * FROM MESSAGE WHERE MESSAGE_NO = ${message_num}
+	</select>
+	
+	<!-- 메세지 테이블에 데이터 넣는 쿼리문 -->
+	<insert id="insertMessage" parameterType="MessageVO">
+		INSERT INTO MESSAGE VALUES(#{send_id}, #{receive_id}, #{message_title}, #{message_content}, SYSDATE, MESSAGE_SEQ.NEXTVAL, 0)
+	</insert>
+	
+	<!-- 읽음 / 안읽음으로 활용 -->
+	<update id="updateReadCount" parameterType="_int">
+		UPDATE MESSAGE 
+		SET READCOUNT = 1 
+		WHERE MESSAGE_NO = ${message_num}
+	</update>
+	
+	<!-- 메세지 삭제 쿼리문 -->
+	<delete id="deleteMessage" parameterType="_int">
+		DELETE FROM MESSAGE WHERE MESSAGE_NO = ${message_num}
+	</delete>
+	
+	<!-- 쪽지함 -->
+	<select id="messageList" parameterType="string" resultType="map">
+		SELECT MESSAGE_NO, SEND_ID, MESSAGE_TITLE, RECEIVE_DATE FROM MESSAGE
+		WHERE RECEIVE_ID = #{session_id}
+	</select>
+	
+	<!-- 쪽지함 내용 -->
+	<select id="messageContent" parameterType="string" resultType="map">
+		SELECT MESSAGE_NO, SEND_ID, MESSAGE_TITLE, RECEIVE_DATE, MESSAGE_CONTENT FROM MESSAGE
+		WHERE RECEIVE_ID = #{session_id}
+	</select>
+
+	<!-- 쪽지보내기 -->
+	<insert id="sendMessage" parameterType="MessageVO">
+		INSERT INTO MESSAGE
+		VALUES (#{session_id}, #{receive_id}, #{message_title}, #{message_content}, #{receive_date}, 
+		message_SEQ.nextval)
+	</insert>
+
+	<select id="getUserInfo" parameterType="string" resultType="UserVO">
+		SELECT * FROM USERS WHERE USERS_ID =#{users_id} 
+	</select>
+	
+	<select id="getUserAddress" parameterType="string" resultType="string">
+		SELECT USERS_ADDRESS FROM USERS WHERE USERS_ID = #{users_id}
+	</select>
+	
+	<select id="getUsersAuthority" parameterType="string" resultType="_int">
+		SELECT USERS_AUTHORITY FROM USERS WHERE USERS_ID = #{users_id}
+	</select>
+	
+	
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
